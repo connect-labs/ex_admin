@@ -74,7 +74,7 @@ defmodule Mix.Tasks.Admin.Install do
   defp check_config(config), do: config
 
   defp check_assets(%{assets: true, brunch: true} = config) do
-    unless File.exists? "brunch-config.js" do
+    unless File.exists? "assets/brunch-config.js" do
       Mix.raise """
       Can't find brunch-config.js
       """
@@ -95,9 +95,9 @@ defmodule Mix.Tasks.Admin.Install do
   def do_assets(%Config{assets: true, brunch: true} = config) do
     base_path = Path.join(~w(priv static))
 
-    File.mkdir_p Path.join ~w{web static vendor}
-    File.mkdir_p Path.join ~w{web static assets fonts}
-    File.mkdir_p Path.join ~w{web static assets images ex_admin datepicker}
+    File.mkdir_p Path.join ~w{vendor}
+    File.mkdir_p Path.join ~w{assets fonts}
+    File.mkdir_p Path.join ~w{assets images ex_admin datepicker}
 
     status_msg("creating", "css files")
     ~w(admin_lte2.css admin_lte2.css.map active_admin.css.css active_admin.css.css.map)
@@ -111,9 +111,9 @@ defmodule Mix.Tasks.Admin.Install do
     copy_vendor_r(base_path, "fonts")
     copy_vendor_r(base_path, "images")
 
-    case File.read "brunch-config.js" do
+    case File.read "assets/brunch-config.js" do
       {:ok, file} ->
-        File.write! "brunch-config.js", file <> brunch_instructions()
+        File.write! "assets/brunch-config.js", file <> brunch_instructions()
       error ->
         Mix.raise """
         Could not open brunch-config.js file. #{inspect error}
@@ -193,7 +193,8 @@ defmodule Mix.Tasks.Admin.Install do
   end
 
   def do_dashboard(%Config{dashboard: true} = config) do
-    dest_path = Path.join [File.cwd! | ~w(web admin)]
+    web_dir = Application.get_env(:ex_admin, :module, "web") |> Macro.underscore
+    dest_path = Path.join [File.cwd! | [web_dir, "admin"]
     dest_file_path = Path.join dest_path, "dashboard.ex"
     source = Path.join([config.package_path | ~w(priv templates admin.install dashboard.exs)] )
     |> EEx.eval_file([base: get_module(),
@@ -202,7 +203,7 @@ defmodule Mix.Tasks.Admin.Install do
       add_txt: (gettext "To add dashboard sections, checkout 'web/admin/dashboards.ex'")
       ])
 
-    file = Path.join(~w(web admin dashboard.ex))
+    file = Path.join([web_dir, "admin", "dashboard.ex"])
     if File.exists?(file) do
       notice_msg "skipping", "#{file}. It already exists."
     else
@@ -271,11 +272,11 @@ defmodule Mix.Tasks.Admin.Install do
 
   defp copy_vendor(from_path, path, filename) do
     File.cp Path.join([get_package_path(), from_path, path, filename]),
-            Path.join([File.cwd!, "web", "static", "vendor", filename])
+            Path.join([File.cwd!, "priv", "static", "vendor", filename])
   end
   defp copy_vendor_r(base_path, path) do
     File.cp_r Path.join([get_package_path(), base_path, path]),
-            Path.join([File.cwd!, "web", "static", "assets", path])
+            Path.join([File.cwd!, "priv", "static", "assets", path])
   end
 
   def brunch_instructions do

@@ -194,7 +194,7 @@ defmodule Mix.Tasks.Admin.Install do
 
   def do_dashboard(%Config{dashboard: true} = config) do
     web_dir = Application.get_env(:ex_admin, :module, "web") |> Macro.underscore
-    dest_path = Path.join [File.cwd! | [web_dir, "admin"]
+    dest_path = Path.join [File.cwd! | [web_dir, "admin"]]
     dest_file_path = Path.join dest_path, "dashboard.ex"
     source = Path.join([config.package_path | ~w(priv templates admin.install dashboard.exs)] )
     |> EEx.eval_file([base: get_module(),
